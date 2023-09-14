@@ -1,0 +1,104 @@
+﻿<Window x:Class="HandNote.MainWindow"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="{Binding Header}"
+        xmlns:viewmodels="clr-namespace:HandNote.ViewModels" xmlns:converters="clr-namespace:HandNote.Converters" xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+        Height="450" Width="800" WindowState="Maximized" Loaded="Window_Loaded" >
+    <Window.Resources>
+        <converters:EditingModeConverter x:Key="editingModeConverter"/>
+        <converters:BooleanVisibilityConverter x:Key="booleanVisibilityConverter"/>
+        <converters:ObjectVisibilityConverter x:Key="objectVisibilityConverter"/>
+        <converters:InverseBooleanVisibilityConverter x:Key="inverseBooleanVisibilityConverter"/>
+    </Window.Resources>
+    <Window.DataContext>
+        <viewmodels:HandNoteMainViewModel/>
+    </Window.DataContext>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        
+        <Ribbon x:Name="RibbonWin"  Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Visibility="{Binding SelectedHandNote,Converter={StaticResource objectVisibilityConverter}}">
+            <Ribbon.ApplicationMenu>
+                <RibbonApplicationMenu Label="File">
+                    <RibbonApplicationMenuItem Header="Save As"  Command="{Binding SelectedHandNote.SaveAsCommand}" />
+                    <RibbonApplicationMenuItem Header="Exit" Command="{Binding ExitCommand}"  />
+                </RibbonApplicationMenu>
+            </Ribbon.ApplicationMenu>
+            <!-- Ribbon Tab #1: Home -->
+            <RibbonTab Header="Home" >
+                <!-- Undo/Redo  group-->
+                <RibbonGroup Header="Undo/Redo">
+                    <RibbonRadioButton LargeImageSource="Images\Undo.png" Label="Undo" IsChecked="False" Command="{Binding SelectedHandNote.UndoCommand}"/>
+                    <RibbonRadioButton  LargeImageSource="Images\Redo.png" Label="Redo" IsChecked="False" Command="{Binding SelectedHandNote.RedoCommand}" />
+                </RibbonGroup>
+                <!-- Brush  group-->
+                <RibbonGroup Header="Brush">
+                    <RibbonRadioButton LargeImageSource="Images\Eraser.png" Label="Eraser" IsChecked="{Binding SelectedHandNote.EditingMode, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource editingModeConverter},ConverterParameter=EraseByStroke}"/>
+                    <RibbonRadioButton  LargeImageSource="Images\Pencil.png" Label="Brush" IsChecked="{Binding SelectedHandNote.EditingMode,UpdateSourceTrigger=PropertyChanged,  Converter={StaticResource editingModeConverter}, ConverterParameter=Ink}"/>
+                    <RibbonRadioButton  LargeImageSource="Images\Highlighter.png" Label="Highlighter" IsChecked="{Binding SelectedHandNote.IsHighLighter, UpdateSourceTrigger=PropertyChanged}"/>
+                    <RibbonSeparator/>
+                </RibbonGroup>
+                <!-- Brush/Highlighter Thickness  group-->
+                <RibbonGroup Header="Thickness">
+                    <StackPanel VerticalAlignment="Center" Margin="10">
+                        <Slider Minimum="2" Maximum="100" Width="200" Foreground="Black" TickPlacement="BottomRight" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding SelectedHandNote.InkThickness, UpdateSourceTrigger=PropertyChanged}" 
+                                Visibility="{Binding SelectedHandNote.IsHighLighter, Converter={StaticResource inverseBooleanVisibilityConverter}}" />
+                        <Slider Minimum="2" Maximum="100" Width="200" Foreground="Black" TickPlacement="BottomRight" TickFrequency="10" IsSnapToTickEnabled="True" Value="{Binding SelectedHandNote.InkThicknessForHighlighter, UpdateSourceTrigger=PropertyChanged}" 
+                                Visibility="{Binding SelectedHandNote.IsHighLighter, Converter={StaticResource booleanVisibilityConverter}}" />
+                    </StackPanel>
+                </RibbonGroup>
+                <!-- Brush/Highlighter Color  group-->
+                <RibbonGroup Header="Selected Color">
+                    <xctk:ColorPicker Height="24" VerticalAlignment="Top" Width="240"  HorizontalAlignment="Left" DisplayColorAndName="True" SelectedColor="{Binding SelectedHandNote.PenColor}"
+                                      Visibility="{Binding SelectedHandNote.IsHighLighter, Converter={StaticResource inverseBooleanVisibilityConverter}}"/>
+                    <xctk:ColorPicker Height="24" VerticalAlignment="Top" Width="240"  HorizontalAlignment="Left" DisplayColorAndName="True" SelectedColor="{Binding SelectedHandNote.PenColorForHighlighter}"
+                                      Visibility="{Binding SelectedHandNote.IsHighLighter, Converter={StaticResource booleanVisibilityConverter}}" />
+                </RibbonGroup>
+                <RibbonGroup Header="Insert">
+                    <RibbonRadioButton LargeImageSource="Images\AddImage.png" Label="Add Image" Command="{Binding SelectedHandNote.AddImageCommand}"/>
+                </RibbonGroup>
+            </RibbonTab>
+        </Ribbon>
+        <!-- Left alligned Expander for Notes Section -->
+        <Expander ExpandDirection="Right" HorizontalAlignment="Left" Grid.Row="1" Grid.Column="0" Width="auto" Header="Notes" Background="AliceBlue" >
+            <Expander.Content>
+                <Border BorderBrush="DarkGray" BorderThickness="0,0,1,0">
+                    <Grid >
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*"/>
+                            <RowDefinition Height="50"/>
+                        </Grid.RowDefinitions>
+                        <ListView Margin="10" ItemsSource="{Binding HandNoteItems}" SelectedItem="{Binding SelectedHandNote}" Grid.Row="0" VerticalAlignment="Top"
+                                  Visibility="{Binding SelectedHandNote,Converter={StaticResource objectVisibilityConverter}}">
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <WrapPanel Margin="0,5">
+                                        <TextBlock Text="{Binding DisplayName}" />
+                                    </WrapPanel>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True" >
+                                            <Setter Property="FontWeight" Value="Bold" />
+                                            <Setter Property="Foreground" Value="Black" />
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                        </ListView>
+                        <Button Grid.Row="1" Content="Add Note" Height="30" Command="{Binding AddNoteItemCommand}" Margin="10" Width="200"/>
+                    </Grid>
+                </Border>
+            </Expander.Content>
+        </Expander>
+        <!-- Selct Canvas-->
+        <ContentControl Grid.Row="1"  Grid.Column="1" Content="{Binding SelectedHandNote.Canvas, UpdateSourceTrigger=PropertyChanged, Mode=TwoWay}"/>
+    </Grid>
+</Window>
